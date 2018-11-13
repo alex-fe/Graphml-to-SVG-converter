@@ -6,6 +6,7 @@ import click
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from edge import Edge, LineStyle
 from node import Border, Fill, Geometry, Label, Node
 
 
@@ -25,6 +26,7 @@ class Grapher(object):
         self.path = path
         self.xml = minidom.parse(self.path)
         self.nodes = []
+        self.edges = []
 
     @staticmethod
     def get_items(element, label):
@@ -37,9 +39,20 @@ class Grapher(object):
             geometry = Geometry(*self.get_items(node, 'y:Geometry'))
             fill = Fill(*self.get_items(node, 'y:Fill'))
             border = Border(*self.get_items(node, 'y:BorderStyle'))
-            label = Border(*self.get_items(node, 'y:NodeLabel'))
+            label = Label(*self.get_items(node, 'y:NodeLabel'))
             nn = Node(id_, label, geometry, fill, border)
             self.nodes.append(nn)
+
+    def parse_edges(self):
+        edges = self.xml.getElementsByTagName('edges')
+        for edge in edges:
+            ed = Edge(
+                edge.attributes['id'].value,
+                edge.attributes['source'].value,
+                edge.attributes['target'].value,
+                LineStyle(*self.get_items(edge, 'y:LineStyle')),
+            )
+            self.edges.append(ed)
 
     def export(graph, path):
         nx.draw_networkx(graph)
@@ -52,4 +65,5 @@ if __name__ == '__main__':
     path = get_path("/Users/alexfeldman/Desktop/test.graphml")
     g = Grapher(path)
     g.parse_nodes()
+    g.parse_edges()
     # export(graph, path)
