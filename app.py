@@ -2,11 +2,11 @@ import os
 import sys
 from xml.dom import minidom
 
-import click
+# import click
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from node import Attribute, Edge, Node
+# from node import Attribute, Edge, Node
 
 
 # @click.command()
@@ -24,8 +24,7 @@ class Grapher(object):
     def __init__(self, path):
         self.path = path
         self.xml = minidom.parse(self.path)
-        self.nodes = {}
-        self.edges = []
+        self.graph = nx.MultiDiGraph()
 
     @staticmethod
     def get_items(element, label):
@@ -39,35 +38,37 @@ class Grapher(object):
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
         for node in nodes:
-            id_ = node.attributes['id'].value
-            geometry = Attribute(**self.get_items(node, 'y:Geometry'))
-            fill = Attribute(**self.get_items(node, 'y:Fill'))
-            border = Attribute(**self.get_items(node, 'y:BorderStyle'))
-            label = Attribute(**self.get_items(node, 'y:NodeLabel'))
-            self.nodes[id_] = Node(id_, label, geometry, fill, border)
-        import pdb; pdb.set_trace()
+            attrs = {
+                **self.get_items(node, 'y:Geometry'),
+                **self.get_items(node, 'y:Fill'),
+                **self.get_items(node, 'y:BorderStyle'),
+                **self.get_items(node, 'y:NodeLabel')
+            }
+            self.graph.add_node(node.attributes['id'].value, **attrs)
 
     def parse_edges(self):
-        edges = self.xml.getElementsByTagName('edges')
+        edges = self.xml.getElementsByTagName('edge')
         for edge in edges:
-            ed = Edge(
-                edge.attributes['id'].value,
+            attrs = {
+                **self.get_items(edge, 'y:LineStyle'),
+            }
+            self.graph.add_edge(
                 edge.attributes['source'].value,
                 edge.attributes['target'].value,
-                Attribute(*self.get_items(edge, 'y:LineStyle')),
+                **attrs
             )
-            self.edges.append(ed)
+        import pdb; pdb.set_trace()
 
-    def export(graph, path):
-        nx.draw_networkx(graph)
-        plt.show(graph)
-        path.replace('.graphml', '.svg')
-    # plt.savefig(path, format='svg')
+    def export(self):
+        nx.draw_networkx(self.graph)
+        plt.show(self.graph)
+        # path.replace('.graphml', '.svg')
+        # plt.savefig(path, format='svg')
 
 
 if __name__ == '__main__':
     path = get_path("/Users/alexfeldman/CS/Freelance/Graphml_converter/Test_files/test.graphml")
     g = Grapher(path)
     g.parse_nodes()
-    # g.parse_edges()
-    # export(graph, path)
+    g.parse_edges()
+    # g.export()
