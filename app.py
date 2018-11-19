@@ -1,3 +1,4 @@
+import collections
 import os
 import sys
 from xml.dom import minidom
@@ -25,6 +26,24 @@ class Grapher(object):
         self.path = path
         self.xml = minidom.parse(self.path)
         self.graph = nx.MultiDiGraph()
+        self.node_attrs = {
+            'pos': {},
+            'node_color': [],
+            'alpha': [],
+            'linewidths': [],
+            'edgecolor': []
+        }
+        self.node_label_attrs = {
+            'font_size': [],
+            'font_color': [],
+            'font_family': [],
+            'labels': {},
+        }
+        self.edge_attrs = {
+            'width': [],
+            'edge_color': [],
+            'style': []
+        }
 
     @staticmethod
     def get_items(element, label):
@@ -38,29 +57,54 @@ class Grapher(object):
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
         for node in nodes:
-            attrs = {
-                **self.get_items(node, 'y:Geometry'),
-                **self.get_items(node, 'y:Fill'),
-                **self.get_items(node, 'y:BorderStyle'),
-                **self.get_items(node, 'y:NodeLabel')
-            }
-            self.graph.add_node(node.attributes['id'].value, **attrs)
+            try:
+                la = (
+                    node
+                    .getElementsByTagName('y:NodeLabel')[0]
+                    .childNodes[0]
+                    .data
+                )
+            except IndexError:
+                la = ''
+            la = la.strip()
+            id_ = node.attributes['id'].value
+            geometry = self.get_items(node, 'y:Geometry')
+            fill = self.get_items(node, 'y:Fill')
+            border = self.get_items(node, 'y:BorderStyle')
+            label = self.get_items(node, 'y:NodeLabel')
+
+            self.node_attrs['pos'][id_] = (
+                float(geometry['x']), float(geometry['y'])
+            )
+            self.node_attrs['edgecolor'].append(border['color'])
+            self.node_attrs['linewidths'].append(border['width'])
+            self.node_attrs['node_color'].append(fill['color'])
+            # self.node_attrs['node_size'].append(fill['color'])
+            self.node_attrs['alpha'].append(float(not fill['transparent']))
+            self.node_label_attrs['font_size'].append(int(label['fontSize']))
+            self.node_label_attrs['font_color'].append(label['textColor'])
+            self.node_label_attrs['font_family'].append(label['fontFamily'])
+            self.node_label_attrs['labels'][id_] = la
+
+            self.graph.add_node(id_)
 
     def parse_edges(self):
         edges = self.xml.getElementsByTagName('edge')
         for edge in edges:
-            attrs = {
-                **self.get_items(edge, 'y:LineStyle'),
-            }
+            line_style = self.get_items(edge, 'y:LineStyle')
+            self.edge_attrs['width'] = line_style['width']
+            self.edge_attrs['edge_color'] = line_style['color']
+            self.edge_attrs['style'] = line_style['type']
+
             self.graph.add_edge(
                 edge.attributes['source'].value,
                 edge.attributes['target'].value,
-                **attrs
             )
-        import pdb; pdb.set_trace()
 
     def export(self):
-        nx.draw_networkx(self.graph)
+        nx.draw_networkx_nodes(self.graph, **self.node_attrs)
+        nx.draw_networkx_labels(self.graph, **self.node_label_attrs)
+        nx.draw_networkx_edges(self.graph, **self.edge_attrs)
         plt.show(self.graph)
         # path.replace('.graphml', '.svg')
         # plt.savefig(path, format='svg')
@@ -71,4 +115,4 @@ if __name__ == '__main__':
     g = Grapher(path)
     g.parse_nodes()
     g.parse_edges()
-    # g.export()
+    g.export()
