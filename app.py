@@ -7,7 +7,7 @@ from xml.dom import minidom
 import matplotlib.pyplot as plt
 import networkx as nx
 
-# from node import Attribute, Edge, Node
+from node import Attribute, Edge, Node
 
 
 # @click.command()
@@ -20,73 +20,72 @@ def get_path(path):
     return path
 
 
-class Grapher(object):
+class Graph(object):
 
     def __init__(self, path):
         self.path = path
         self.xml = minidom.parse(self.path)
-        self.graph = nx.MultiDiGraph()
-        self.node_attrs = {
-            'pos': {},
-            'node_color': [],
-            'alpha': [],
-            'linewidths': [],
-            'edgecolor': []
-        }
-        self.node_label_attrs = {
-            'font_size': [],
-            'font_color': [],
-            'font_family': [],
-            'labels': {},
-        }
-        self.edge_attrs = {
-            'width': [],
-            'edge_color': [],
-            'style': []
-        }
+        self.nodes = {}
+        # self.graph = nx.MultiDiGraph()
+        # self.node_attrs = {
+        #     'pos': {},
+        #     'node_color': [],
+        #     'alpha': [],
+        #     'linewidths': [],
+        #     'edgecolor': []
+        # }
+        # self.node_label_attrs = {
+        #     'font_size': [],
+        #     'font_color': [],
+        #     'font_family': [],
+        #     'labels': {},
+        # }
+        # self.edge_attrs = {
+        #     'width': [],
+        #     'edge_color': [],
+        #     'style': []
+        # }
 
     @staticmethod
-    def get_items(element, label):
+    def get_attrs(element, label, i=0):
         try:
-            items = element.getElementsByTagName(label)[0].attributes.items()
+            items = element.getElementsByTagName(label)[i].attributes.items()
         except IndexError:
             return {}
         else:
             return {k: v for k, v in items}
 
+    @staticmethod
+    def __get_node_label(node):
+        try:
+            return (
+                node
+                .getElementsByTagName('y:NodeLabel')[0]
+                .childNodes[0]
+                .data
+            )
+        except IndexError:
+            return ''
+
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
         for node in nodes:
-            try:
-                la = (
-                    node
-                    .getElementsByTagName('y:NodeLabel')[0]
-                    .childNodes[0]
-                    .data
-                )
-            except IndexError:
-                la = ''
-            la = la.strip()
+            la = self.__get_node_label(node).strip()
             id_ = node.attributes['id'].value
-            geometry = self.get_items(node, 'y:Geometry')
-            fill = self.get_items(node, 'y:Fill')
-            border = self.get_items(node, 'y:BorderStyle')
-            label = self.get_items(node, 'y:NodeLabel')
-
-            self.node_attrs['pos'][id_] = (
-                float(geometry['x']), float(geometry['y'])
+            geometry = self.get_attrs(node, 'y:Geometry')
+            fill = self.get_attrs(node, 'y:Fill')
+            border = self.get_attrs(node, 'y:BorderStyle')
+            label = self.get_attrs(node, 'y:NodeLabel')
+            self.nodes[id_] = Node(
+                id_,
+                la,
+                Attribute('Label', **label),
+                Attribute('Geometry', **geometry),
+                Attribute('Fill', **fill),
+                Attribute('Border', **border),
             )
-            self.node_attrs['edgecolor'].append(border['color'])
-            self.node_attrs['linewidths'].append(border['width'])
-            self.node_attrs['node_color'].append(fill['color'])
-            # self.node_attrs['node_size'].append(fill['color'])
-            self.node_attrs['alpha'].append(float(not fill['transparent']))
-            self.node_label_attrs['font_size'].append(int(label['fontSize']))
-            self.node_label_attrs['font_color'].append(label['textColor'])
-            self.node_label_attrs['font_family'].append(label['fontFamily'])
-            self.node_label_attrs['labels'][id_] = la
+        import pdb; pdb.set_trace()
 
-            self.graph.add_node(id_)
 
     def parse_edges(self):
         edges = self.xml.getElementsByTagName('edge')
@@ -112,7 +111,7 @@ class Grapher(object):
 
 if __name__ == '__main__':
     path = get_path("/Users/alexfeldman/CS/Freelance/Graphml_converter/Test_files/test.graphml")
-    g = Grapher(path)
+    g = Graph(path)
     g.parse_nodes()
-    g.parse_edges()
-    g.export()
+    # g.parse_edges()
+    # g.export()
