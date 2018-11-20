@@ -43,15 +43,19 @@ class Node(object):
         self.geometry.y = float(y)
 
 
-
-
 class Edge(object):
 
-    def __init__(self, id_, source, target, line_style):
+    def __init__(
+        self, id_, source, target, line_style, path, arrow, bend, points
+    ):
         self.id = id_
         self.source = source
         self.target = target
-        self.ls = line_style
+        self.line_style = line_style
+        self.path = path
+        self.points = points
+        self.bend = bend
+        self.arrow = arrow
 
     def __repr__(self):
         return '<Edge {}: {}->{}'.format(self.id, self.source, self.target)

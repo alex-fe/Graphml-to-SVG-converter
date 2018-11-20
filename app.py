@@ -1,50 +1,18 @@
-import collections
 import os
-import sys
 from xml.dom import minidom
 
-# import click
-import matplotlib.pyplot as plt
-import networkx as nx
 
 from node import Attribute, Edge, Node
-
-
-# @click.command()
-# @click.option('-p', '--path', help='Number of greetings.')
-def get_path(path):
-    if path is None:
-        path = input("Please enter path to Graphml file: ").strip()
-    if not os.path.isfile(path) or os.path.splitext(path)[1] != '.graphml':
-        sys.exit('Incorrect path')
-    return path
 
 
 class Graph(object):
 
     def __init__(self, path):
         self.path = path
+        self._svg_path = path.replace('.graphml', '.svg')
         self.xml = minidom.parse(self.path)
         self.nodes = {}
-        # self.graph = nx.MultiDiGraph()
-        # self.node_attrs = {
-        #     'pos': {},
-        #     'node_color': [],
-        #     'alpha': [],
-        #     'linewidths': [],
-        #     'edgecolor': []
-        # }
-        # self.node_label_attrs = {
-        #     'font_size': [],
-        #     'font_color': [],
-        #     'font_family': [],
-        #     'labels': {},
-        # }
-        # self.edge_attrs = {
-        #     'width': [],
-        #     'edge_color': [],
-        #     'style': []
-        # }
+        self.edges = {}
 
     @staticmethod
     def get_attrs(element, label, i=0):
@@ -67,6 +35,19 @@ class Graph(object):
         except IndexError:
             return ''
 
+    @property
+    def svg_path(self):
+        return self._svg_path
+
+    @svg_path.setter
+    def svg_path(self, path=None, name=None):
+        head, tail = os.path.split(self._svg_path)
+        if path is not None:
+            head = path
+        if name is not None:
+            tail = name
+        self._svg_path = os.path.join(head, tail)
+
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
         for node in nodes:
@@ -84,34 +65,39 @@ class Graph(object):
                 Attribute('Fill', **fill),
                 Attribute('Border', **border),
             )
-        import pdb; pdb.set_trace()
-
 
     def parse_edges(self):
         edges = self.xml.getElementsByTagName('edge')
         for edge in edges:
-            line_style = self.get_items(edge, 'y:LineStyle')
-            self.edge_attrs['width'] = line_style['width']
-            self.edge_attrs['edge_color'] = line_style['color']
-            self.edge_attrs['style'] = line_style['type']
-
-            self.graph.add_edge(
-                edge.attributes['source'].value,
-                edge.attributes['target'].value,
+            id_ = edge.attributes['id'].value
+            source = edge.attributes['source'].value
+            target = edge.attributes['target'].value
+            line_style = self.get_attrs(edge, 'y:LineStyle')
+            linepath = self.get_attrs(edge, 'y:Path')
+            arrow = self.get_attrs(edge, 'y:Arrows')
+            bend = self.get_attrs(edge, 'y:BendStyle')
+            points = [
+                Attribute('Point', **self.get_attrs(p, 'y:Point'))
+                for p in edge.getElementsByTagName('y:Point')
+            ]
+            self.edges[id_] = Edge(
+                id_,
+                source,
+                target,
+                Attribute('Line Style', **line_style),
+                Attribute('Path', **linepath),
+                Attribute('Arrow', **arrow),
+                Attribute('Bend', **bend),
+                points
             )
 
-    def export(self):
-        nx.draw_networkx_nodes(self.graph, **self.node_attrs)
-        nx.draw_networkx_labels(self.graph, **self.node_label_attrs)
-        nx.draw_networkx_edges(self.graph, **self.edge_attrs)
-        plt.show(self.graph)
-        # path.replace('.graphml', '.svg')
-        # plt.savefig(path, format='svg')
-
+    def draw_svg(self):
+        pass
 
 if __name__ == '__main__':
-    path = get_path("/Users/alexfeldman/CS/Freelance/Graphml_converter/Test_files/test.graphml")
+    path = "/Users/alexfeldman/CS/Freelance/Graphml_converter/Test_files/test_map_svg_convert.graphml"
     g = Graph(path)
     g.parse_nodes()
-    # g.parse_edges()
+    g.parse_edges()
+    import pdb; pdb.set_trace()
     # g.export()
