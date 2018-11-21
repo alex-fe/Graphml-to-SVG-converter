@@ -23,6 +23,12 @@ class Point(NameMixin):
     def coordinates(self):
         return (self.x, self.y)
 
+    def translate(self, x, y=None):
+        if y is None:
+            y = x
+        self.x += x
+        self.y += y
+
 
 class Geometry(Point, NameMixin):
 
