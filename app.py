@@ -3,7 +3,9 @@ from xml.dom import minidom
 
 import svgwrite
 
-from element import Edge, Fill, Geometry, Label, Node, Style, Viewbox
+from element import (
+    Arrow, Edge, Fill, Geometry, Label, Node, Path, Point, Style, Viewbox
+)
 
 
 class Graph(object):
@@ -29,7 +31,7 @@ class Graph(object):
             return {k: v for k, v in items}
 
     @staticmethod
-    def __get_node_label(node):
+    def get_node_text(node):
         try:
             return (
                 node
@@ -42,10 +44,10 @@ class Graph(object):
             return
 
     def add_node(
-        self, id_, text='',
-        height=10.0, width=10.0, x=0.0, y=0.0,  # Geometry args
-        fill_color="#ffffff", transparent=False,  # Fill args
-        border_color="#000000", border_type='line', border_width=1.0,  # Border args
+        self, id_, key=None, text='',
+        height=10.0, width=10.0, x=0.0, y=0.0,
+        fill_color="#ffffff", transparent=False,
+        border_color="#000000", border_type='line', border_width=1.0,
         geometry=None, label=None, fill=None, border=None,
         **label_kwargs
     ):
@@ -57,15 +59,32 @@ class Graph(object):
             border = Style(border_color, border_type, border_width)
         if label is None:
             label = Label(**label_kwargs)
+        self.nodes[id_] = Node(id_, text, key, label, geometry, fill, border)
 
-        self.nodes[id_] = Node(id_, text, label, geometry, fill, border)
-
+    def add_edge(
+        self, id_, key=None, source=None, target=None,
+        edge_color="#000000", edge_type='line', width=1.0, smoothed=False,
+        sx=0.0, sy=0.0, tx=0.0, ty=0.0, points=[],
+        arrow_source=None, arrow_target='delta',
+        line_style=None, path=None, arrow=None
+    ):
+        if line_style is None:
+            line_style = Style(edge_color, edge_type, width, smoothed)
+        if path is None:
+            path = Path(sx, sy, tx, ty, points)
+        if arrow is None:
+            arrow = Arrow(arrow_source, arrow_target)
+        self.edges[id_] = Edge(
+            id_, self.nodes.get(source), self.nodes.get(target), line_style, path,
+            arrow
+        )
 
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
         for node in nodes:
-            la = self.__get_node_label(node)
             id_ = node.attributes['id'].value
+            text = self.get_node_text(node)
+            data = self.get_attrs(node, 'data')
             geometry = self.get_attrs(node, 'y:Geometry')
             fill = self.get_attrs(node, 'y:Fill')
             border = self.get_attrs(node, 'y:BorderStyle')
@@ -73,38 +92,32 @@ class Graph(object):
                 **self.get_attrs(node, 'y:NodeLabel'),
                 **self.get_attrs(node, 'y:SmartNodeLabelModelParameter')
             }
-            self.nodes[id_] = Node(
-                id_,
-                la,
-                Label('Label', **label),
-                Attribute('Geometry', **geometry),
-                Attribute('Fill', **fill),
-                Style('Border', **border),
+            self.add_node(
+                id_, data['key'], text, geometry['height'], geometry['width'],
+                geometry['x'], geometry['y'], fill['color'],
+                fill['transparent'], border['color'], border['type'],
+                border['width'],
             )
 
     def parse_edges(self):
         edges = self.xml.getElementsByTagName('edge')
         for edge in edges:
             id_ = edge.attributes['id'].value
+            data = self.get_attrs(edge, 'data')
             source = edge.attributes['source'].value
             target = edge.attributes['target'].value
-            line_style = self.get_attrs(edge, 'y:LineStyle')
-            linepath = self.get_attrs(edge, 'y:Path')
-            arrow = self.get_attrs(edge, 'y:Arrows')
+            ls = self.get_attrs(edge, 'y:LineStyle'),
             bend = self.get_attrs(edge, 'y:BendStyle')
+            path = self.get_attrs(edge, 'y:Path')
+            arrow = self.get_attrs(edge, 'y:Arrows')
             points = [
-                Attribute('Point', **self.get_attrs(p, 'y:Point'))
+                Point(**self.get_attrs(p, 'y:Point'))
                 for p in edge.getElementsByTagName('y:Point')
             ]
-            self.edges[id_] = Edge(
-                id_,
-                self.nodes[source],
-                self.nodes[target],
-                Style('Line Style', **line_style),
-                Attribute('Path', **linepath),
-                Attribute('Arrow', **arrow),
-                Attribute('Bend', **bend),
-                points
+            self.add_edge(
+                id_, data['key'], source, target, ls['color'], ls['type'],
+                ls['width'], bend['smoothed'], path['sx'], path['sy'], path['tx'],
+                path['ty'], points, arrow['source'], arrow['target']
             )
 
     def create_viewbox(self):

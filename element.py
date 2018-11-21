@@ -30,24 +30,27 @@ class Viewbox(object):
         return self.__dict__
 
 
-class Geometry(object):
+class Point(object):
+
+    def __init__(self, x, y):
+        self.x = float(x)
+        self.y = float(y)
+
+    @property
+    def coordinates(self):
+        return (self.x, self.y)
+
+
+class Geometry(Point):
 
     def __init__(self, height, width, x, y):
-        self.height = height
-        self.width = width
-        self.x = x
-        self.y = y
-        for k, v in self.__dict__.items():
-            if not isinstance(v, float):
-                setattr(self, k, float(v))
+        super(Geometry, self).__init__(x, y)
+        self.height = float(height)
+        self.width = float(width)
 
         @property
         def size(self):
             return (self.width, self.height)
-
-        @property
-        def coordinates(self):
-            return (self.x, self.y)
 
 
 class Fill(RGBMixin):
@@ -59,10 +62,11 @@ class Fill(RGBMixin):
 
 class Style(RGBMixin):
 
-    def __init__(self, color, type_, width):
+    def __init__(self, color, type_, width, smoothed=None):
         self._color = color
         self.type = type_
         self.width = float(width)
+        self.bend_smoothing = smoothed
 
     @property
     def dasharray(self):
@@ -107,11 +111,27 @@ class Label(Geometry, RGBMixin):
         return self.hex_to_rgb(self.text_color)
 
 
+class Path(object):
+    def __init__(self, sx, sy, tx, ty, points):
+        self.sx = sx
+        self.sy = sy
+        self.tx = tx
+        self.ty = ty
+        self.points = points
+
+
+class Arrow(object):
+    def __init__(self, source, target):
+        self.source = source
+        self.target = target
+
+
 class Node(RGBMixin):
 
-    def __init__(self, id_, text, label, geometry, fill, border):
+    def __init__(self, id_, key, text, label, geometry, fill, border):
         self.id = id_
         self.text = text
+        self.key = key
         self.label = label
         self.geometry = geometry
         self.fill = fill
@@ -140,22 +160,17 @@ class Node(RGBMixin):
 
 class Edge(object):
 
-    def __init__(
-        self, id_, source, target, line_style, path, arrow, bend, points
-    ):
+    def __init__(self, id_, key, source, target, line_style, path, arrow):
         self.id = id_
+        self.key = key
         self.source = source
         self.target = target
         self.line_style = line_style
         self.path = path
-        self.points = points
-        self.bend = bend
         self.arrow = arrow
 
     def __repr__(self):
-        return '<Edge {}: {}->{}'.format(
-            self.id, self.source.id, self.target.id
-        )
+        return '<Edge {} {}->{}>'.format(self.id, self.source.id, self.target.id)
 
     @property
     def start_coordinates(self):
@@ -167,4 +182,4 @@ class Edge(object):
 
     @property
     def color(self):
-        return hex_to_rgb(self.line_style.color)
+        return self.line_style.color
