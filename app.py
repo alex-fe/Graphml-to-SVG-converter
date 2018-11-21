@@ -6,9 +6,10 @@ import svgwrite
 from element import (
     Arrow, Edge, Fill, Geometry, Label, Node, Path, Point, Style, Viewbox
 )
+from mixins import NameMixin
 
 
-class Graph(object):
+class Graph(NameMixin):
 
     def __init__(self, path, output_path=None):
         self.path = path
@@ -44,7 +45,7 @@ class Graph(object):
             return
 
     def add_node(
-        self, id_, key=None, text='',
+        self, id_, key=None, text='', shape='rect',
         height=10.0, width=10.0, x=0.0, y=0.0,
         fill_color="#ffffff", transparent=False,
         border_color="#000000", border_type='line', border_width=1.0,
@@ -59,7 +60,7 @@ class Graph(object):
             border = Style(border_color, border_type, border_width)
         if label is None:
             label = Label(**label_kwargs)
-        self.nodes[id_] = Node(id_, text, key, label, geometry, fill, border)
+        self.nodes[id_] = Node(id_, key, text, shape, label, geometry, fill, border)
 
     def add_edge(
         self, id_, key=None, source=None, target=None,
