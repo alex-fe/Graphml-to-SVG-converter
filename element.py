@@ -122,7 +122,7 @@ class Node(RGBMixin):
     def __init__(self, id_, key, text, shape, label, geometry, fill, border):
         self.id = id_
         self.text = text
-        self.shape = 'rect'
+        self.shape = shape
         self.key = key
         self.label = label
         self.geometry = geometry
