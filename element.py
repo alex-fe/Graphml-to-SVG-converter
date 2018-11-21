@@ -1,10 +1,12 @@
 import svgwrite
 
 
-def hex_to_rgb(hex_):
-        hex_ = hex_.lstrip('#')
-        r, g, b = tuple(int(hex_[i:i + 2], 16) for i in (0, 2, 4))
-        return svgwrite.utils.rgb(r, g, b)
+class RGBMixin(object):
+
+    def hex_to_rgb(hex_):
+            hex_ = hex_.lstrip('#')
+            r, g, b = tuple(int(hex_[i:i + 2], 16) for i in (0, 2, 4))
+            return svgwrite.utils.rgb(r, g, b)
 
 
 class Viewbox(object):
@@ -28,51 +30,84 @@ class Viewbox(object):
         return self.__dict__
 
 
-class Attribute(object):
-    def __init__(self, name, **kwargs):
-        self.__name__ = name
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+class Geometry(object):
 
-    def __repr__(self):
-        return '<{}>'.format(str(self))
+    def __init__(self, height, width, x, y):
+        self.height = height
+        self.width = width
+        self.x = x
+        self.y = y
+        for k, v in self.__dict__.items():
+            if not isinstance(v, float):
+                setattr(self, k, float(v))
 
-    def __str__(self):
-        return self.__name__
+        @property
+        def size(self):
+            return (self.width, self.height)
 
-    def get_args(self, as_string=False):
-        args = self.__dict__.keys()
-        if as_string:
-            return ', '.join(args)
-        return args
-
-
-class Style(Attribute):
-    def __init__(self, name, **kwargs):
-        super(Style, self).__init__(self.__class__.__name__, **kwargs)
-        if self.type == 'dashed':
-            self.dasharray = [10, 2]
-        else:
-            self.dasharray = None
+        @property
+        def coordinates(self):
+            return (self.x, self.y)
 
 
-class Label(Attribute):
-    def __init__(self, name, **kwargs):
-        super(Label, self).__init__(self.__class__.__name__, **kwargs)
-        if not hasattr(self, 'fontFamily'):
-            self.fontFamily = 'san serif'
-        if not hasattr(self, 'fontSize'):
-            self.fontSize = 12
-        if not hasattr(self, 'textColor'):
-            self.textColor = "#000000"
-        self.x_up = float(getattr(self, 'upX', 0))
-        self.y_up = float(getattr(self, 'upY', 0))
+class Fill(RGBMixin):
+
+    def __init__(self, color, transparent):
+        self.color = color
+        self.transparent = transparent
+
+
+class Style(RGBMixin):
+
+    def __init__(self, color, type_, width):
+        self._color = color
+        self.type = type_
+        self.width = float(width)
 
     @property
-    def size(self):
-        return (float(self.width), float(self.height))
+    def dasharray(self):
+        if self.type == 'dashed':
+            return [10, 2]
+        else:
+            return None
 
-class Node(object):
+    @property
+    def color(self):
+        return self.hex_to_rgb(self._color)
+
+
+class Label(Geometry, RGBMixin):
+
+    def __init__(
+        self, alignment="center", autoSizePolicy="content",
+        fontFamily="Dialog", fontSize=6.0, fontStyle="plain",
+        textColor="#000000", visible="true",
+        hasBackgroundColor="false", hasLineColor="false",
+        horizontalTextPosition="center", verticalTextPosition="center",
+        height=10.0, width=10.0, x=0.0, y=0.0,
+        iconTextGap=4.0, modelName="custom",
+    ):
+        super(Label, self).__init__(height, width, x, y)
+        self.alignment = alignment
+        self.auto_size_policy = autoSizePolicy
+        self.font = fontFamily
+        self.font_size = fontSize
+        self.font_style = fontStyle
+        self.text_color = textColor
+        self.visible = visible
+        self.has_background_color = hasBackgroundColor
+        self.has_line_color = hasLineColor
+        self.horizontal_text_position = horizontalTextPosition
+        self.vertical_text_position = verticalTextPosition
+        self.icon_text_gap = iconTextGap
+        self.model_name = modelName
+
+    @property
+    def color(self):
+        return self.hex_to_rgb(self.text_color)
+
+
+class Node(RGBMixin):
 
     def __init__(self, id_, text, label, geometry, fill, border):
         self.id = id_
@@ -88,42 +123,19 @@ class Node(object):
     def __str__(self):
         return self.text
 
-    @property
-    def coordinates(self):
-        return (float(self.geometry.x), float(self.geometry.y))
-
-    @property
-    def l_coordinates(self):
-        return (
-            self.coordinates[0] + self.label.x_up,
-            self.coordinates[1] + self.label.y_up
-        )
-
-    property
-    def true_coordinates(self):
-        if True:
-            return (
-                self.coordinates[0] + (float(self.geometry.width) / 2),
-                self.coordinates[1] + (float(self.geometry.height) / 2),
-            )
-        else:
-            return self.coordinates
-
-    @property
-    def size(self):
-        return (float(self.geometry.width), float(self.geometry.height))
+    # property
+    # def true_coordinates(self):
+    #     if True:
+    #         return (
+    #             self.coordinates[0] + (float(self.geometry.width) / 2),
+    #             self.coordinates[1] + (float(self.geometry.height) / 2),
+    #         )
+    #     else:
+    #         return self.coordinates
 
     @property
     def color(self):
-        return hex_to_rgb(self.fill.color)
-
-    @property
-    def border_color(self):
-        return hex_to_rgb(self.border.color)
-
-    @property
-    def label_color(self):
-        return hex_to_rgb(self.label.textColor)
+        return self.hex_to_rgb(self.fill.color)
 
 
 class Edge(object):

@@ -3,7 +3,7 @@ from xml.dom import minidom
 
 import svgwrite
 
-from element import Attribute, Edge, Label, Node, Style, Viewbox
+from element import Edge, Fill, Geometry, Label, Node, Style, Viewbox
 
 
 class Graph(object):
@@ -40,6 +40,26 @@ class Graph(object):
             )
         except IndexError:
             return
+
+    def add_node(
+        self, id_, text='',
+        height=10.0, width=10.0, x=0.0, y=0.0,  # Geometry args
+        fill_color="#ffffff", transparent=False,  # Fill args
+        border_color="#000000", border_type='line', border_width=1.0,  # Border args
+        geometry=None, label=None, fill=None, border=None,
+        **label_kwargs
+    ):
+        if geometry is None:
+            geometry = Geometry(height, width, x, y)
+        if fill is None:
+            fill = Fill(fill_color, transparent)
+        if border is None:
+            border = Style(border_color, border_type, border_width)
+        if label is None:
+            label = Label(**label_kwargs)
+
+        self.nodes[id_] = Node(id_, text, label, geometry, fill, border)
+
 
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
