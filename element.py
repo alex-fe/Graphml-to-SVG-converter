@@ -1,36 +1,19 @@
-import svgwrite
+from mixins import NameMixin, RGBMixin
 
 
-class RGBMixin(object):
-
-    def hex_to_rgb(hex_):
-            hex_ = hex_.lstrip('#')
-            r, g, b = tuple(int(hex_[i:i + 2], 16) for i in (0, 2, 4))
-            return svgwrite.utils.rgb(r, g, b)
-
-
-class Viewbox(object):
-    """Specify a rectangle in user space (no units allowed) which should be
-    mapped to the bounds of the viewport established by the given element.
-        Parameters:
-        minx (number) – left border of the viewBox
-        miny (number) – top border of the viewBox
-        width (number) – width of the viewBox
-        height (number) – height of the viewBox
-    """
-
-    def __init__(self, min_x=0, min_y=0, width=0, height=0):
-        self.minx = min_x
-        self.miny = min_y
-        self.width = width
-        self.height = height
+class Viewbox(NameMixin):
+    def __init__(self, min_x=0.0, min_y=0.0, width=0.0, height=0.0):
+        self.minx = float(min_x)
+        self.miny = float(min_y)
+        self.width = float(width)
+        self.height = float(height)
 
     @property
     def box(self):
         return self.__dict__
 
 
-class Point(object):
+class Point(NameMixin):
 
     def __init__(self, x, y):
         self.x = float(x)
@@ -41,28 +24,28 @@ class Point(object):
         return (self.x, self.y)
 
 
-class Geometry(Point):
+class Geometry(Point, NameMixin):
 
     def __init__(self, height, width, x, y):
         super(Geometry, self).__init__(x, y)
         self.height = float(height)
         self.width = float(width)
 
-        @property
-        def size(self):
-            return (self.width, self.height)
+    @property
+    def size(self):
+        return (self.width, self.height)
 
 
-class Fill(RGBMixin):
+class Fill(NameMixin, RGBMixin):
 
     def __init__(self, color, transparent):
         self.color = color
         self.transparent = transparent
 
 
-class Style(RGBMixin):
+class Style(NameMixin, RGBMixin):
 
-    def __init__(self, color, type_, width, smoothed=None):
+    def __init__(self, color, type_, width=1.0, smoothed=None):
         self._color = color
         self.type = type_
         self.width = float(width)
@@ -80,7 +63,7 @@ class Style(RGBMixin):
         return self.hex_to_rgb(self._color)
 
 
-class Label(Geometry, RGBMixin):
+class Label(Geometry, NameMixin, RGBMixin):
 
     def __init__(
         self, alignment="center", autoSizePolicy="content",
@@ -111,7 +94,7 @@ class Label(Geometry, RGBMixin):
         return self.hex_to_rgb(self.text_color)
 
 
-class Path(object):
+class Path(NameMixin):
     def __init__(self, sx, sy, tx, ty, points):
         self.sx = sx
         self.sy = sy
@@ -120,7 +103,7 @@ class Path(object):
         self.points = points
 
 
-class Arrow(object):
+class Arrow(NameMixin):
     def __init__(self, source, target):
         self.source = source
         self.target = target
@@ -150,7 +133,7 @@ class Node(RGBMixin):
     def coordinates(self):
         if self.shape in self.__top_left_shapes:
             x = self.geometry.x
-            y = self.geometry.x
+            y = self.geometry.y
             return (x + (self.geometry.width / 2), y + (self.geometry.height / 2))
         else:
             return self.geometry.coordinates
