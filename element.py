@@ -128,9 +128,12 @@ class Arrow(object):
 
 class Node(RGBMixin):
 
-    def __init__(self, id_, key, text, label, geometry, fill, border):
+    __top_left_shapes = 'rect'
+
+    def __init__(self, id_, key, text, shape, label, geometry, fill, border):
         self.id = id_
         self.text = text
+        self.shape = 'rect'
         self.key = key
         self.label = label
         self.geometry = geometry
@@ -143,15 +146,14 @@ class Node(RGBMixin):
     def __str__(self):
         return self.text
 
-    # property
-    # def true_coordinates(self):
-    #     if True:
-    #         return (
-    #             self.coordinates[0] + (float(self.geometry.width) / 2),
-    #             self.coordinates[1] + (float(self.geometry.height) / 2),
-    #         )
-    #     else:
-    #         return self.coordinates
+    @property
+    def coordinates(self):
+        if self.shape in self.__top_left_shapes:
+            x = self.geometry.x
+            y = self.geometry.x
+            return (x + (self.geometry.width / 2), y + (self.geometry.height / 2))
+        else:
+            return self.geometry.coordinates
 
     @property
     def color(self):
