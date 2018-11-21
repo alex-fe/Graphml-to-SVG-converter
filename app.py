@@ -1,18 +1,23 @@
+import sys
 from xml.dom import minidom
 
 import svgwrite
 
-from element import Attribute, Border, Edge, Node
+from element import Attribute, Edge, Label, Node, Style, Viewbox
 
 
 class Graph(object):
 
-    def __init__(self, path):
+    def __init__(self, path, output_path=None):
         self.path = path
-        self.svg_path = path.replace('test.graphml', 'output.svg')
+        if output_path is None:
+            self.svg_path = path.replace('.graphml', '.svg')
+        else:
+            self.svg_path = output_path
         self.xml = minidom.parse(self.path)
         self.nodes = {}
         self.edges = {}
+        self.viewbox = None
 
     @staticmethod
     def get_attrs(element, label, i=0):
@@ -31,26 +36,30 @@ class Graph(object):
                 .getElementsByTagName('y:NodeLabel')[0]
                 .childNodes[0]
                 .data
+                .strip()
             )
         except IndexError:
-            return ''
+            return
 
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
         for node in nodes:
-            la = self.__get_node_label(node).strip()
+            la = self.__get_node_label(node)
             id_ = node.attributes['id'].value
             geometry = self.get_attrs(node, 'y:Geometry')
             fill = self.get_attrs(node, 'y:Fill')
             border = self.get_attrs(node, 'y:BorderStyle')
-            label = self.get_attrs(node, 'y:NodeLabel')
+            label = {
+                **self.get_attrs(node, 'y:NodeLabel'),
+                **self.get_attrs(node, 'y:SmartNodeLabelModelParameter')
+            }
             self.nodes[id_] = Node(
                 id_,
                 la,
-                Attribute('Label', **label),
+                Label('Label', **label),
                 Attribute('Geometry', **geometry),
                 Attribute('Fill', **fill),
-                Border(**border),
+                Style('Border', **border),
             )
 
     def parse_edges(self):
@@ -69,25 +78,56 @@ class Graph(object):
             ]
             self.edges[id_] = Edge(
                 id_,
-                source,
-                target,
-                Attribute('Line Style', **line_style),
+                self.nodes[source],
+                self.nodes[target],
+                Style('Line Style', **line_style),
                 Attribute('Path', **linepath),
                 Attribute('Arrow', **arrow),
                 Attribute('Bend', **bend),
                 points
             )
 
+    def create_viewbox(self):
+        min_x = sys.maxsize
+        min_y = sys.maxsize
+        max_x = -sys.maxsize
+        max_y = -sys.maxsize
+        for node in self.nodes.values():
+            if node.coordinates[0] > max_x:
+                max_x = node.coordinates[0]
+            if node.coordinates[1] > max_y:
+                max_y = node.coordinates[1]
+            if node.coordinates[0] < min_x:
+                min_x = node.coordinates[0]
+            if node.coordinates[1] < min_y:
+                min_y = node.coordinates[1]
+        width = max_x - min_x
+        height = max_y - min_y
+        self.viewbox = Viewbox(min_x, min_y, width, height)
+
     def draw_svg(self):
-        svg = svgwrite.Drawing(filename=self.svg_path, debug=True, profile='full')
+        svg = svgwrite.Drawing(filename=self.svg_path)
+        svg.viewbox(**self.viewbox.box)
         for node in self.nodes.values():
             rect = svg.rect(insert=node.coordinates, size=node.size)
             rect.fill(color=node.color)
             rect.stroke(color=node.border_color, width=node.border.width)
             rect.dasharray(dasharray=node.border.dasharray)
             svg.add(rect)
+            if node.text:
+                label = svgwrite.text.Text(
+                    node.text,
+                    insert=node.l_coordinates,
+                )
+                label.fill(color=node.label_color)
+                svg.add(label)
         for edge in self.edges.values():
-
+            line = svgwrite.shapes.Line(
+                start=edge.start_coordinates, end=edge.end_coordinates
+            )
+            line.fill(color=edge.color)
+            line.stroke(width=edge.line_style.width)
+            svg.add(line)
         svg.save()
         # import pdb; pdb.set_trace()
 
@@ -97,4 +137,5 @@ if __name__ == '__main__':
     g = Graph(path)
     g.parse_nodes()
     g.parse_edges()
+    g.create_viewbox()
     g.draw_svg()

@@ -7,6 +7,27 @@ def hex_to_rgb(hex_):
         return svgwrite.utils.rgb(r, g, b)
 
 
+class Viewbox(object):
+    """Specify a rectangle in user space (no units allowed) which should be
+    mapped to the bounds of the viewport established by the given element.
+        Parameters:
+        minx (number) – left border of the viewBox
+        miny (number) – top border of the viewBox
+        width (number) – width of the viewBox
+        height (number) – height of the viewBox
+    """
+
+    def __init__(self, min_x=0, min_y=0, width=0, height=0):
+        self.minx = min_x
+        self.miny = min_y
+        self.width = width
+        self.height = height
+
+    @property
+    def box(self):
+        return self.__dict__
+
+
 class Attribute(object):
     def __init__(self, name, **kwargs):
         self.__name__ = name
@@ -26,14 +47,30 @@ class Attribute(object):
         return args
 
 
-class Border(Attribute):
-    def __init__(self, **kwargs):
-        super(Border, self).__init__(self.__class__.__name__, **kwargs)
+class Style(Attribute):
+    def __init__(self, name, **kwargs):
+        super(Style, self).__init__(self.__class__.__name__, **kwargs)
         if self.type == 'dashed':
-            self.dasharray = ['75%', '25%']
+            self.dasharray = [10, 2]
         else:
             self.dasharray = None
 
+
+class Label(Attribute):
+    def __init__(self, name, **kwargs):
+        super(Label, self).__init__(self.__class__.__name__, **kwargs)
+        if not hasattr(self, 'fontFamily'):
+            self.fontFamily = 'san serif'
+        if not hasattr(self, 'fontSize'):
+            self.fontSize = 12
+        if not hasattr(self, 'textColor'):
+            self.textColor = "#000000"
+        self.x_up = float(getattr(self, 'upX', 0))
+        self.y_up = float(getattr(self, 'upY', 0))
+
+    @property
+    def size(self):
+        return (float(self.width), float(self.height))
 
 class Node(object):
 
@@ -56,6 +93,23 @@ class Node(object):
         return (float(self.geometry.x), float(self.geometry.y))
 
     @property
+    def l_coordinates(self):
+        return (
+            self.coordinates[0] + self.label.x_up,
+            self.coordinates[1] + self.label.y_up
+        )
+
+    property
+    def true_coordinates(self):
+        if True:
+            return (
+                self.coordinates[0] + (float(self.geometry.width) / 2),
+                self.coordinates[1] + (float(self.geometry.height) / 2),
+            )
+        else:
+            return self.coordinates
+
+    @property
     def size(self):
         return (float(self.geometry.width), float(self.geometry.height))
 
@@ -66,6 +120,10 @@ class Node(object):
     @property
     def border_color(self):
         return hex_to_rgb(self.border.color)
+
+    @property
+    def label_color(self):
+        return hex_to_rgb(self.label.textColor)
 
 
 class Edge(object):
@@ -83,4 +141,18 @@ class Edge(object):
         self.arrow = arrow
 
     def __repr__(self):
-        return '<Edge {}: {}->{}'.format(self.id, self.source, self.target)
+        return '<Edge {}: {}->{}'.format(
+            self.id, self.source.id, self.target.id
+        )
+
+    @property
+    def start_coordinates(self):
+        return self.source.coordinates
+
+    @property
+    def end_coordinates(self):
+        return self.target.coordinates
+
+    @property
+    def color(self):
+        return hex_to_rgb(self.line_style.color)
