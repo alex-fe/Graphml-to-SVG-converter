@@ -1,15 +1,15 @@
-import os
 from xml.dom import minidom
 
+import svgwrite
 
-from node import Attribute, Edge, Node
+from element import Attribute, Border, Edge, Node
 
 
 class Graph(object):
 
     def __init__(self, path):
         self.path = path
-        self._svg_path = path.replace('.graphml', '.svg')
+        self.svg_path = path.replace('test.graphml', 'output.svg')
         self.xml = minidom.parse(self.path)
         self.nodes = {}
         self.edges = {}
@@ -35,19 +35,6 @@ class Graph(object):
         except IndexError:
             return ''
 
-    @property
-    def svg_path(self):
-        return self._svg_path
-
-    @svg_path.setter
-    def svg_path(self, path=None, name=None):
-        head, tail = os.path.split(self._svg_path)
-        if path is not None:
-            head = path
-        if name is not None:
-            tail = name
-        self._svg_path = os.path.join(head, tail)
-
     def parse_nodes(self):
         nodes = self.xml.getElementsByTagName('node')
         for node in nodes:
@@ -63,7 +50,7 @@ class Graph(object):
                 Attribute('Label', **label),
                 Attribute('Geometry', **geometry),
                 Attribute('Fill', **fill),
-                Attribute('Border', **border),
+                Border(**border),
             )
 
     def parse_edges(self):
@@ -92,12 +79,22 @@ class Graph(object):
             )
 
     def draw_svg(self):
-        pass
+        svg = svgwrite.Drawing(filename=self.svg_path, debug=True, profile='full')
+        for node in self.nodes.values():
+            rect = svg.rect(insert=node.coordinates, size=node.size)
+            rect.fill(color=node.color)
+            rect.stroke(color=node.border_color, width=node.border.width)
+            rect.dasharray(dasharray=node.border.dasharray)
+            svg.add(rect)
+        for edge in self.edges.values():
+
+        svg.save()
+        # import pdb; pdb.set_trace()
+
 
 if __name__ == '__main__':
-    path = "/Users/alexfeldman/CS/Freelance/Graphml_converter/Test_files/test_map_svg_convert.graphml"
+    path = "/Users/alexfeldman/CS/Freelance/Graphml_converter/Test_files/test.graphml"
     g = Graph(path)
     g.parse_nodes()
     g.parse_edges()
-    import pdb; pdb.set_trace()
-    # g.export()
+    g.draw_svg()

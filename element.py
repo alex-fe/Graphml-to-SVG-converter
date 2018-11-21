@@ -1,3 +1,12 @@
+import svgwrite
+
+
+def hex_to_rgb(hex_):
+        hex_ = hex_.lstrip('#')
+        r, g, b = tuple(int(hex_[i:i + 2], 16) for i in (0, 2, 4))
+        return svgwrite.utils.rgb(r, g, b)
+
+
 class Attribute(object):
     def __init__(self, name, **kwargs):
         self.__name__ = name
@@ -15,6 +24,15 @@ class Attribute(object):
         if as_string:
             return ', '.join(args)
         return args
+
+
+class Border(Attribute):
+    def __init__(self, **kwargs):
+        super(Border, self).__init__(self.__class__.__name__, **kwargs)
+        if self.type == 'dashed':
+            self.dasharray = ['75%', '25%']
+        else:
+            self.dasharray = None
 
 
 class Node(object):
@@ -37,10 +55,17 @@ class Node(object):
     def coordinates(self):
         return (float(self.geometry.x), float(self.geometry.y))
 
-    @coordinates.setter
-    def coordinates(self, x, y):
-        self.geometry.x = float(x)
-        self.geometry.y = float(y)
+    @property
+    def size(self):
+        return (float(self.geometry.width), float(self.geometry.height))
+
+    @property
+    def color(self):
+        return hex_to_rgb(self.fill.color)
+
+    @property
+    def border_color(self):
+        return hex_to_rgb(self.border.color)
 
 
 class Edge(object):
