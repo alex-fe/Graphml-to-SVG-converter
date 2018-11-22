@@ -63,7 +63,7 @@ class Graph(NameMixin):
         self.nodes[id_] = Node(id_, key, text, shape, label, geometry, fill, border)
 
     def add_edge(
-        self, id_, key=None, source=None, target=None,
+        self, id_, key=None, source='', target='',
         edge_color="#000000", edge_type='line', width=1.0, smoothed=False,
         sx=0.0, sy=0.0, tx=0.0, ty=0.0, points=[],
         arrow_source=None, arrow_target='delta',
@@ -76,8 +76,8 @@ class Graph(NameMixin):
         if arrow is None:
             arrow = Arrow(arrow_source, arrow_target)
         self.edges[id_] = Edge(
-            id_, self.nodes.get(source), self.nodes.get(target), line_style, path,
-            arrow
+            id_, key, self.nodes.get(source), self.nodes.get(target), line_style,
+            path, arrow
         )
 
     def parse_nodes(self):
