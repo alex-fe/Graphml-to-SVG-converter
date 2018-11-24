@@ -44,9 +44,11 @@ class Geometry(Point, NameMixin):
 
 class Fill(NameMixin, RGBMixin):
 
-    def __init__(self, color, transparent):
+    def __init__(self, color, color2=None, transparent=False, hasColor=False):
         self.color = color
+        self.color2 = color2
         self.transparent = transparent
+        self.has_color = hasColor
 
 
 class Style(NameMixin, RGBMixin):
@@ -117,8 +119,6 @@ class Arrow(NameMixin):
 
 class Node(RGBMixin):
 
-    __top_left_shapes = 'rect'
-
     def __init__(self, id_, key, text, shape, label, geometry, fill, border):
         self.id = id_
         self.text = text
@@ -137,16 +137,15 @@ class Node(RGBMixin):
 
     @property
     def coordinates(self):
-        if self.shape in self.__top_left_shapes:
-            x = self.geometry.x
-            y = self.geometry.y
-            return (x + (self.geometry.width / 2), y + (self.geometry.height / 2))
-        else:
-            return self.geometry.coordinates
+        return self.geometry.coordinates
 
     @property
     def color(self):
         return self.hex_to_rgb(self.fill.color)
+
+    @property
+    def size(self):
+        return self.geometry.size
 
 
 class Edge(object):

@@ -4,7 +4,7 @@ from xml.dom import minidom
 import svgwrite
 
 from element import (
-    Arrow, Edge, Fill, Geometry, Label, Node, Path, Point, Style, Viewbox
+    Arrow, Edge, Fill, Geometry, Label, Node, Path, Style, Viewbox
 )
 from mixins import NameMixin
 
@@ -45,7 +45,7 @@ class Graph(NameMixin):
             return
 
     def add_node(
-        self, id_, key=None, text='', shape='rect',
+        self, id_, key=None, text='', shape=None,
         height=10.0, width=10.0, x=0.0, y=0.0,
         fill_color="#ffffff", transparent=False,
         border_color="#000000", border_type='line', border_width=1.0,
@@ -89,14 +89,15 @@ class Graph(NameMixin):
             geometry = self.get_attrs(node, 'y:Geometry')
             fill = self.get_attrs(node, 'y:Fill')
             border = self.get_attrs(node, 'y:BorderStyle')
+            shape = 'ellipse'
             label = {
                 **self.get_attrs(node, 'y:NodeLabel'),
                 **self.get_attrs(node, 'y:SmartNodeLabelModelParameter')
             }
             self.add_node(
-                id_, data['key'], text, geometry['height'], geometry['width'],
-                geometry['x'], geometry['y'], fill['color'],
-                fill['transparent'], border['color'], border['type'],
+                id_, data['key'], text, shape, geometry['height'],
+                geometry['width'], geometry['x'], geometry['y'],
+                fill['color'], fill['transparent'], border['color'], border['type'],
                 border['width'],
             )
 
@@ -107,14 +108,15 @@ class Graph(NameMixin):
             data = self.get_attrs(edge, 'data')
             source = edge.attributes['source'].value
             target = edge.attributes['target'].value
-            ls = self.get_attrs(edge, 'y:LineStyle'),
+            ls = self.get_attrs(edge, 'y:LineStyle')
             bend = self.get_attrs(edge, 'y:BendStyle')
             path = self.get_attrs(edge, 'y:Path')
             arrow = self.get_attrs(edge, 'y:Arrows')
-            points = [
-                Point(**self.get_attrs(p, 'y:Point'))
-                for p in edge.getElementsByTagName('y:Point')
-            ]
+            points = []
+            # try:
+            #     points = [
+            #         Point(**self.get_attrs(p, 'y:Point'))
+            #         for p in edge.getElementsByTagName('y:Point')
             self.add_edge(
                 id_, data['key'], source, target, ls['color'], ls['type'],
                 ls['width'], bend['smoothed'], path['sx'], path['sy'], path['tx'],
@@ -143,20 +145,17 @@ class Graph(NameMixin):
         svg = svgwrite.Drawing(filename=self.svg_path)
         svg.viewbox(**self.viewbox.box)
         for node in self.nodes.values():
-            rect = svg.rect(insert=node.coordinates, size=node.size)
-            rect.fill(color=node.color)
-            rect.stroke(color=node.border_color, width=node.border.width)
-            rect.dasharray(dasharray=node.border.dasharray)
-            svg.add(rect)
+            ellipse = svg.ellipse(center=node.coordinates, r=node.size, id=node.id)
+            ellipse.fill(color=node.color)
+            ellipse.stroke(color=node.border.color, width=node.border.width)
+            ellipse.dasharray(dasharray=node.border.dasharray)
+            svg.add(ellipse)
             if node.text:
-                label = svgwrite.text.Text(
-                    node.text,
-                    insert=node.l_coordinates,
-                )
-                label.fill(color=node.label_color)
+                label = svg.text(node.text, insert=node.label.coordinates)
+                label.fill(color=node.label.color)
                 svg.add(label)
         for edge in self.edges.values():
-            line = svgwrite.shapes.Line(
+            line = svg.line(
                 start=edge.start_coordinates, end=edge.end_coordinates
             )
             line.fill(color=edge.color)
@@ -167,7 +166,7 @@ class Graph(NameMixin):
 
 
 if __name__ == '__main__':
-    path = "/Users/alexfeldman/CS/Freelance/Graphml_converter/Test_files/test.graphml"
+    path = "/Users/alexfeldman/CS/Freelance/Graphml_converter/tests/Test_files/test.graphml"
     g = Graph(path)
     g.parse_nodes()
     g.parse_edges()
