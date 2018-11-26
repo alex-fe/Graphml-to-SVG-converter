@@ -144,12 +144,46 @@ class Node(RGBMixin):
         return self.geometry.coordinates
 
     @property
+    def label_coordinates(self):
+        return self.coordinates
+
+    @property
     def color(self):
         return self.hex_to_rgb(self.fill.color)
 
     @property
     def size(self):
         return self.geometry.size
+
+    def location_relation(self, node):
+        if not isinstance(node, Node):
+            raise TypeError('Argument must be of type Node.')
+
+        if self.geometry.width:
+            x_bounds_min = self.geometry.x + (self.geometry.width / 3)
+            x_bounds_max = self.geometry.x + (self.geometry.width * 2 / 3)
+            if node.geometry.x < x_bounds_min:
+                x = self.geometry.x
+            elif x_bounds_min < node.geometry.x < x_bounds_max:
+                x = self.geometry.x + self.center[0]
+            else:
+                x = self.geometry.x + self.geometry.width
+        else:
+            x = self.geometry.x
+
+        if self.geometry.height:
+            y_bounds_min = self.geometry.height / 3
+            y_bounds_max = self.geometry.height * 2 / 3
+            if node.geometry.y < y_bounds_min:
+                y = self.geometry.y + self.height
+            elif y_bounds_min < node.geometry.y < y_bounds_max:
+                y = self.geometry.y + self.center[1]
+            else:
+                y = self.geometry.y
+        else:
+            y = self.geometry.y
+
+        return (x, y)
 
 
 class Edge(object):
@@ -168,11 +202,11 @@ class Edge(object):
 
     @property
     def start_coordinates(self):
-        return self.source.coordinates
+        return self.source.location_relation(self.target)
 
     @property
     def end_coordinates(self):
-        return self.target.coordinates
+        return self.target.location_relation(self.source)
 
     @property
     def color(self):
