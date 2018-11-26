@@ -53,7 +53,7 @@ class Graph(NameMixin):
         **label_kwargs
     ):
         if geometry is None:
-            geometry = Geometry(height, width, x, y)
+            geometry = Geometry(width, height, x, y)
         if fill is None:
             fill = Fill(fill_color, transparent)
         if border is None:

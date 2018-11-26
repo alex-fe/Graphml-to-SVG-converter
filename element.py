@@ -1,18 +1,6 @@
 from mixins import NameMixin, RGBMixin
 
 
-class Viewbox(NameMixin):
-    def __init__(self, min_x=0.0, min_y=0.0, width=0.0, height=0.0):
-        self.minx = float(min_x)
-        self.miny = float(min_y)
-        self.width = float(width)
-        self.height = float(height)
-
-    @property
-    def box(self):
-        return self.__dict__
-
-
 class Point(NameMixin):
 
     def __init__(self, x, y):
@@ -32,14 +20,30 @@ class Point(NameMixin):
 
 class Geometry(Point, NameMixin):
 
-    def __init__(self, height, width, x, y):
+    def __init__(self, width, height, x, y):
         super(Geometry, self).__init__(x, y)
-        self.height = float(height)
         self.width = float(width)
+        self.height = float(height)
 
     @property
     def size(self):
         return (self.width, self.height)
+
+    @property
+    def center(self):
+        return (self.width / 2, self.height / 2)
+
+
+class Viewbox(Geometry, NameMixin):
+    def __init__(self, min_x=0.0, min_y=0.0, width=0.0, height=0.0):
+        super(Viewbox, self).__init__(width, height, min_x, min_y)
+
+    @property
+    def box(self):
+        return {
+            'minx': self.x, 'miny': self.y, 'height': self.height,
+            'width': self.width
+        }
 
 
 class Fill(NameMixin, RGBMixin):
@@ -82,7 +86,7 @@ class Label(Geometry, NameMixin, RGBMixin):
         height=10.0, width=10.0, x=0.0, y=0.0,
         iconTextGap=4.0, modelName="custom",
     ):
-        super(Label, self).__init__(height, width, x, y)
+        super(Label, self).__init__(width, height, x, y)
         self.alignment = alignment
         self.auto_size_policy = autoSizePolicy
         self.font = fontFamily

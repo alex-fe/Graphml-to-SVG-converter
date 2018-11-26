@@ -51,10 +51,21 @@ def test_geometry_size():
     y = 54.1
     width = 2.0
     height = 4.534
-    geometry = Geometry(height, width, x, y)
+    geometry = Geometry(width, height, x, y)
     assert isinstance(geometry.size, tuple)
     assert geometry.size[0] == width
     assert geometry.size[1] == height
+
+
+def test_geometry_center():
+    x = 4.0
+    y = 54.1
+    width = 2.0
+    height = 5.0
+    geometry = Geometry(width, height, x, y)
+    assert isinstance(geometry.center, tuple)
+    assert geometry.center[0] == width / 2
+    assert geometry.center[1] == height / 2
 
 
 def test_style_dasharray():
