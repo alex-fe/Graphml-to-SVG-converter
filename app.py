@@ -142,25 +142,25 @@ class Graph(NameMixin):
         self.viewbox = Viewbox(min_x, min_y, width, height)
 
     def draw_svg(self):
-        svg = svgwrite.Drawing(filename=self.svg_path)
-        svg.viewbox(**self.viewbox.box)
-        for node in self.nodes.values():
-            ellipse = svg.ellipse(center=node.coordinates, r=node.size, id=node.id)
-            ellipse.fill(color=node.color)
-            ellipse.stroke(color=node.border.color, width=node.border.width)
-            ellipse.dasharray(dasharray=node.border.dasharray)
-            svg.add(ellipse)
-            if node.text:
-                label = svg.text(node.text, insert=node.label.coordinates)
-                label.fill(color=node.label.color)
-                svg.add(label)
+        svg = svgwrite.Drawing(filename=self.svg_path, size=self.viewbox.size)
+        # svg.viewbox(**self.viewbox.box)
         for edge in self.edges.values():
             line = svg.line(
                 start=edge.start_coordinates, end=edge.end_coordinates
             )
-            line.fill(color=edge.color)
-            line.stroke(width=edge.line_style.width)
+            line.stroke(color=edge.color, width=edge.line_style.width)
             svg.add(line)
+
+        for node in self.nodes.values():
+            rect = svg.rect(insert=node.coordinates, size=node.size, id=node.id)
+            rect.fill(color=node.color)
+            rect.stroke(color=node.border.color, width=node.border.width)
+            rect.dasharray(dasharray=node.border.dasharray)
+            svg.add(rect)
+            if node.text:
+                label = svg.text(node.text, insert=node.label_coordinates)
+                label.fill(color=node.label.color)
+                svg.add(label)
         svg.save()
         # import pdb; pdb.set_trace()
 
