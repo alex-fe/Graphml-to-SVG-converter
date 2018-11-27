@@ -129,17 +129,27 @@ class Graph(NameMixin):
         max_x = -sys.maxsize
         max_y = -sys.maxsize
         for node in self.nodes.values():
-            if node.coordinates[0] > max_x:
-                max_x = node.coordinates[0]
-            if node.coordinates[1] > max_y:
-                max_y = node.coordinates[1]
+            if node.coordinates[0] + node.geometry.width > max_x:
+                max_x = node.coordinates[0] + node.geometry.width
+            if node.coordinates[1] + node.geometry.height > max_y:
+                max_y = node.coordinates[1] + node.geometry.height
             if node.coordinates[0] < min_x:
                 min_x = node.coordinates[0]
             if node.coordinates[1] < min_y:
                 min_y = node.coordinates[1]
+        min_x -= Viewbox.padding
+        min_y -= Viewbox.padding
+        max_x += Viewbox.padding
+        max_y += Viewbox.padding
         width = max_x - min_x
         height = max_y - min_y
         self.viewbox = Viewbox(min_x, min_y, width, height)
+
+    def adjust(self):
+        if self.viewbox is None:
+            self.create_viewbox()
+        for node in self.nodes.values():
+            node.geometry.translate(-self.viewbox.x, -self.viewbox.y)
 
     def draw_svg(self):
         svg = svgwrite.Drawing(filename=self.svg_path, size=self.viewbox.size)
@@ -170,5 +180,5 @@ if __name__ == '__main__':
     g = Graph(path)
     g.parse_nodes()
     g.parse_edges()
-    g.create_viewbox()
+    g.adjust()
     g.draw_svg()

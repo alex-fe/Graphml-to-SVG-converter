@@ -35,15 +35,11 @@ class Geometry(Point, NameMixin):
 
 
 class Viewbox(Geometry, NameMixin):
+
+    padding = 20
+
     def __init__(self, min_x=0.0, min_y=0.0, width=0.0, height=0.0):
         super(Viewbox, self).__init__(width, height, min_x, min_y)
-
-    @property
-    def box(self):
-        return {
-            'minx': self.x, 'miny': self.y, 'height': self.height,
-            'width': self.width
-        }
 
 
 class Fill(NameMixin, RGBMixin):
