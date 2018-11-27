@@ -156,13 +156,23 @@ class Graph(NameMixin):
 
     def draw_svg(self):
         svg = svgwrite.Drawing(filename=self.svg_path, size=self.viewbox.size)
-        # svg.viewbox(**self.viewbox.box)
         for edge in self.edges.values():
-            # import pdb; pdb.set_trace()
-            line = svg.path(d=edge.d)
-            line.stroke(color=edge.color, width=edge.line_style.width)
-            svg.add(line)
-
+            path = svg.path(d=edge.d)
+            path.stroke(color=edge.color, width=edge.line_style.width)
+            path.fill(color="rgb(255,255,255)", opacity=0.0)
+            for pos, draw in zip(('start', 'end'), edge.arrow.draw):
+                if draw:
+                    arrow = svg.marker(
+                        id='arrow_{}_{}'.format(edge.id, pos),
+                        refX=0.1, refY=2.0,
+                        orient='auto',
+                        markerUnits='userSpaceOnUse'
+                    )
+                    tip = svg.path(d=edge.arrow.d, fill=edge.color)
+                    arrow.add(tip)
+                    svg.defs.add(arrow)
+                    path['marker-{}'.format(pos)] = arrow.get_funciri()
+            svg.add(path)
         for node in self.nodes.values():
             rect = svg.rect(insert=node.coordinates, size=node.size, id=node.id)
             rect.fill(color=node.color)

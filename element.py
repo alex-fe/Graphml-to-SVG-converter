@@ -111,10 +111,31 @@ class Path(NameMixin):
         self.points = points
 
 
-class Arrow(NameMixin):
-    def __init__(self, source, target):
+class Arrow(Point):
+
+    arrows = ['standard', 'delta', 'white_delta', 'plain']
+
+    def __init__(self, source, target, x=0.5, y=0.5, d='M0,0 L0,6 L9,3 z'):
+        super(Arrow, self).__init__(x, y)
         self.source = source
         self.target = target
+        self.d = d
+
+    @property
+    def draw(self):
+        return (self.draw_source, self.draw_target)
+
+    @property
+    def draw_source(self):
+        return self.source in self.arrows
+
+    @property
+    def draw_target(self):
+        return self.target in self.arrows
+
+    @property
+    def size(self):
+        return self.coordinates
 
 
 class Node(RGBMixin):
