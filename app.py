@@ -4,7 +4,7 @@ from xml.dom import minidom
 import svgwrite
 
 from element import (
-    Arrow, Edge, Fill, Geometry, Label, Node, Path, Style, Viewbox
+    Arrow, Edge, Fill, Geometry, Label, Node, Path, Point, Style, Viewbox
 )
 from mixins import NameMixin
 
@@ -112,11 +112,10 @@ class Graph(NameMixin):
             bend = self.get_attrs(edge, 'y:BendStyle')
             path = self.get_attrs(edge, 'y:Path')
             arrow = self.get_attrs(edge, 'y:Arrows')
-            points = []
-            # try:
-            #     points = [
-            #         Point(**self.get_attrs(p, 'y:Point'))
-            #         for p in edge.getElementsByTagName('y:Point')
+            points = [
+                Point(**self.get_attrs(edge, 'y:Point', i=i))
+                for i, p in enumerate(edge.getElementsByTagName('y:Point'))
+            ]
             self.add_edge(
                 id_, data['key'], source, target, ls['color'], ls['type'],
                 ls['width'], bend['smoothed'], path['sx'], path['sy'], path['tx'],
@@ -150,14 +149,17 @@ class Graph(NameMixin):
             self.create_viewbox()
         for node in self.nodes.values():
             node.geometry.translate(-self.viewbox.x, -self.viewbox.y)
+        for edge in self.edges.values():
+            for point in edge.path.points:
+                point.translate(-self.viewbox.x, -self.viewbox.y)
+
 
     def draw_svg(self):
         svg = svgwrite.Drawing(filename=self.svg_path, size=self.viewbox.size)
         # svg.viewbox(**self.viewbox.box)
         for edge in self.edges.values():
-            line = svg.line(
-                start=edge.start_coordinates, end=edge.end_coordinates
-            )
+            # import pdb; pdb.set_trace()
+            line = svg.path(d=edge.d)
             line.stroke(color=edge.color, width=edge.line_style.width)
             svg.add(line)
 

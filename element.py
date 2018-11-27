@@ -62,7 +62,7 @@ class Style(NameMixin, RGBMixin):
     @property
     def dasharray(self):
         if self.type == 'dashed':
-            return [10, 2]
+            return [15, 2]
         else:
             return None
 
@@ -207,3 +207,11 @@ class Edge(object):
     @property
     def color(self):
         return self.line_style.color
+
+    @property
+    def d(self):
+        data_str = 'M{}, {} '.format(*self.start_coordinates)
+        for point in self.path.points:
+            data_str += 'L{}, {} '.format(*point.coordinates)
+        data_str += 'L{}, {}'.format(*self.end_coordinates)
+        return data_str
