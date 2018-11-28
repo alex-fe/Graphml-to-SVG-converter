@@ -1,5 +1,5 @@
-import pytest
 from mixins import NameMixin, RGBMixin
+from element import Point
 
 
 def test_hex_to_rgb():
@@ -9,6 +9,7 @@ def test_hex_to_rgb():
     assert RGBMixin.hex_to_rgb(hex_black) == 'rgb(0,0,0)'
 
 
-@pytest.mark.skip()
 def test_repr_mixin():
-    assert repr(NameMixin) == type(NameMixin)
+    assert NameMixin in Point.__bases__  # assert inheritance
+    point = Point(1, 3)
+    assert repr(point) == 'Point'
