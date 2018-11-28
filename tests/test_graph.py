@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app import Graph
+from graph import Graph
 from element import Edge, Geometry, Node
 
 
