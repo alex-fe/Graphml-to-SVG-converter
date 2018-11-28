@@ -94,11 +94,16 @@ class Graph(NameMixin):
                 **self.get_attrs(node, 'y:NodeLabel'),
                 **self.get_attrs(node, 'y:SmartNodeLabelModelParameter')
             }
+            for var_name in Geometry.__init__.__code__.co_varnames:
+                if var_name in label:
+                    label['l_{}'.format(var_name)] = label.pop(var_name)
+            if 'xml:space' in label.keys():
+                label['xml_space'] = label.pop('xml:space')
             self.add_node(
                 id_, data['key'], text, shape, geometry['height'],
                 geometry['width'], geometry['x'], geometry['y'],
                 fill['color'], fill['transparent'], border['color'], border['type'],
-                border['width'],
+                border['width'], **label
             )
 
     def parse_edges(self):
@@ -153,7 +158,6 @@ class Graph(NameMixin):
             for point in edge.path.points:
                 point.translate(-self.viewbox.x, -self.viewbox.y)
 
-
     def draw_svg(self):
         svg = svgwrite.Drawing(filename=self.svg_path, size=self.viewbox.size)
         for edge in self.edges.values():
@@ -174,15 +178,23 @@ class Graph(NameMixin):
                     path['marker-{}'.format(pos)] = arrow.get_funciri()
             svg.add(path)
         for node in self.nodes.values():
-            rect = svg.rect(insert=node.coordinates, size=node.size, id=node.id)
+            group = svgwrite.container.Group(id=node.key)
+            rect = svg.rect(
+                insert=node.coordinates, size=node.size, id=node.id, rx=node.rx,
+                ry=node.ry
+            )
             rect.fill(color=node.color)
             rect.stroke(color=node.border.color, width=node.border.width)
             rect.dasharray(dasharray=node.border.dasharray)
-            svg.add(rect)
+            group.add(rect)
             if node.text:
                 label = svg.text(node.text, insert=node.label_coordinates)
+                label['alignment-baseline'] = node.label.alignment
+                label['xml:space'] = 'preserve'
+                # import pdb; pdb.set_trace()
                 label.fill(color=node.label.color)
-                svg.add(label)
+                group.add(label)
+            svg.add(group)
         svg.save()
         # import pdb; pdb.set_trace()
 

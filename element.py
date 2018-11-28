@@ -1,3 +1,5 @@
+import functools
+
 from mixins import NameMixin, RGBMixin
 
 
@@ -16,6 +18,12 @@ class Point(NameMixin):
             y = x
         self.x += x
         self.y += y
+
+    def scale(self, x, y=None):
+        if y is None:
+            y = x
+        self.x *= x
+        self.y *= y
 
 
 class Geometry(Point, NameMixin):
@@ -40,6 +48,12 @@ class Viewbox(Geometry, NameMixin):
 
     def __init__(self, min_x=0.0, min_y=0.0, width=0.0, height=0.0):
         super(Viewbox, self).__init__(width, height, min_x, min_y)
+        self.sx = 2.0
+        self.sy = 2.0
+
+    def scale_size(self, scalar_width, scalar_height):
+        self.width *= scalar_width
+        self.height *= scalar_height
 
 
 class Fill(NameMixin, RGBMixin):
@@ -73,6 +87,8 @@ class Style(NameMixin, RGBMixin):
 
 class Label(Geometry, NameMixin, RGBMixin):
 
+    alignment_dict = {'center': 'middle'}
+
     def __init__(
         self, alignment="center", autoSizePolicy="content",
         fontFamily="Dialog", fontSize=6.0, fontStyle="plain",
@@ -81,9 +97,10 @@ class Label(Geometry, NameMixin, RGBMixin):
         horizontalTextPosition="center", verticalTextPosition="center",
         height=10.0, width=10.0, x=0.0, y=0.0,
         iconTextGap=4.0, modelName="custom",
+        **kwargs
     ):
         super(Label, self).__init__(width, height, x, y)
-        self.alignment = alignment
+        self.alignment = self.alignment_dict.get(alignment, 'middle')
         self.auto_size_policy = autoSizePolicy
         self.font = fontFamily
         self.font_size = fontSize
@@ -96,6 +113,8 @@ class Label(Geometry, NameMixin, RGBMixin):
         self.vertical_text_position = verticalTextPosition
         self.icon_text_gap = iconTextGap
         self.model_name = modelName
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
     @property
     def color(self):
@@ -138,6 +157,7 @@ class Arrow(Point):
         return self.coordinates
 
 
+@functools.total_ordering
 class Node(RGBMixin):
 
     def __init__(self, id_, key, text, shape, label, geometry, fill, border):
@@ -149,6 +169,8 @@ class Node(RGBMixin):
         self.geometry = geometry
         self.fill = fill
         self.border = border
+        self.rx = 6.0
+        self.ry = 6.0
 
     def __repr__(self):
         return '<Node {}>'.format(self.id)
@@ -156,13 +178,32 @@ class Node(RGBMixin):
     def __str__(self):
         return self.text
 
+    def __eq__(self, node):
+        if not isinstance(node, Node):
+            return TypeError('Can only compare type Node to type Node.')
+        return (
+            self.geometry.x == node.geometry.x
+            and self.geometry.y == node.geometry.y
+        )
+
+    def __lt__(self, node):
+        if not isinstance(node, Node):
+            return TypeError('Can only compare type Node to type Node.')
+        if self.geometry.y == node.geometry.y:
+            return self.geometry.y < node.geometry.y
+        else:
+            return self.geometry.x < node.geometry.x
+
     @property
     def coordinates(self):
         return self.geometry.coordinates
 
     @property
     def label_coordinates(self):
-        return self.coordinates
+
+        x = self.geometry.x + ((self.geometry.width - self.label.width) / 2)
+        y = self.geometry.y + self.geometry.center[1] + self.label.y
+        return x, y
 
     @property
     def color(self):
@@ -173,30 +214,32 @@ class Node(RGBMixin):
         return self.geometry.size
 
     def location_relation(self, node):
+
         if not isinstance(node, Node):
             raise TypeError('Argument must be of type Node.')
 
+        padding = 2
         if self.geometry.width:
             x_bounds_min = self.geometry.x + (self.geometry.width / 3)
             x_bounds_max = self.geometry.x + (self.geometry.width * 2 / 3)
-            if node.geometry.x < x_bounds_min:
-                x = self.geometry.x
-            elif x_bounds_min < node.geometry.x < x_bounds_max:
-                x = self.geometry.x + self.center[0]
-            else:
-                x = self.geometry.x + self.geometry.width
+            if node.geometry.x < x_bounds_min:  # Node left of
+                x = self.geometry.x - padding
+            elif x_bounds_min < node.geometry.x < x_bounds_max:   # Node centered
+                x = self.geometry.x + self.geometry.center[0]
+            else:  # Node right of
+                x = self.geometry.x + self.geometry.width + padding
         else:
             x = self.geometry.x
 
         if self.geometry.height:
             y_bounds_min = self.geometry.height / 3
             y_bounds_max = self.geometry.height * 2 / 3
-            if node.geometry.y < y_bounds_min:
-                y = self.geometry.y + self.height
-            elif y_bounds_min < node.geometry.y < y_bounds_max:
-                y = self.geometry.y + self.center[1]
-            else:
-                y = self.geometry.y
+            if node.geometry.y < y_bounds_min:  # Node above
+                y = self.geometry.y + self.height - padding
+            elif y_bounds_min < node.geometry.y < y_bounds_max:  # Node centered
+                y = self.geometry.y + self.geometry.center[1]
+            else:  # Node below
+                y = self.geometry.y + padding
         else:
             y = self.geometry.y
 
