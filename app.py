@@ -72,7 +72,7 @@ class Graph(NameMixin):
         if line_style is None:
             line_style = Style(edge_color, edge_type, width, smoothed)
         if path is None:
-            path = Path(sx, sy, tx, ty, points)
+            path = Path(points, sx, sy, tx, ty)
         if arrow is None:
             arrow = Arrow(arrow_source, arrow_target)
         self.edges[id_] = Edge(

@@ -51,10 +51,6 @@ class Viewbox(Geometry, NameMixin):
         self.sx = 2.0
         self.sy = 2.0
 
-    def scale_size(self, scalar_width, scalar_height):
-        self.width *= scalar_width
-        self.height *= scalar_height
-
 
 class Fill(NameMixin, RGBMixin):
 
@@ -122,12 +118,12 @@ class Label(Geometry, NameMixin, RGBMixin):
 
 
 class Path(NameMixin):
-    def __init__(self, sx, sy, tx, ty, points):
+    def __init__(self, points, sx=0.0, sy=0.0, tx=0.0, ty=0.0):
+        self.points = points
         self.sx = sx
         self.sy = sy
         self.tx = tx
         self.ty = ty
-        self.points = points
 
 
 class Arrow(Point):
