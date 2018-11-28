@@ -1,12 +1,4 @@
 from element import Edge, Geometry, Node, Point, Style, Viewbox
-from mixins import RGBMixin
-
-
-def test_hex_to_rgb():
-    hex_white = "#ffffff"
-    hex_black = "#000000"
-    assert RGBMixin.hex_to_rgb(hex_white) == 'rgb(255,255,255)'
-    assert RGBMixin.hex_to_rgb(hex_black) == 'rgb(0,0,0)'
 
 
 def test_viewbox_box():
@@ -91,7 +83,7 @@ def test_node_coordinates():
     assert node.coordinates[1] == node.geometry.y + (height / 2)
 
     node = Node('id', 'key', 'text', 'circle', None, geometry, None, None)
-    
+
     assert node.coordinates[0] == node.geometry.x
     assert node.coordinates[1] == node.geometry.y
 
