@@ -160,23 +160,6 @@ class Graph(NameMixin):
 
     def draw_svg(self):
         svg = svgwrite.Drawing(filename=self.svg_path, size=self.viewbox.size)
-        for edge in self.edges.values():
-            path = svg.path(d=edge.d)
-            path.stroke(color=edge.color, width=edge.line_style.width)
-            path.fill(color="rgb(255,255,255)", opacity=0.0)
-            for pos, draw in zip(('start', 'end'), edge.arrow.draw):
-                if draw:
-                    arrow = svg.marker(
-                        id='arrow_{}_{}'.format(edge.id, pos),
-                        refX=0.1, refY=2.0,
-                        orient='auto',
-                        markerUnits='userSpaceOnUse'
-                    )
-                    tip = svg.path(d=edge.arrow.d, fill=edge.color)
-                    arrow.add(tip)
-                    svg.defs.add(arrow)
-                    path['marker-{}'.format(pos)] = arrow.get_funciri()
-            svg.add(path)
         for node in self.nodes.values():
             group = svgwrite.container.Group(id=node.key)
             rect = svg.rect(
@@ -191,18 +174,38 @@ class Graph(NameMixin):
                 label = svg.text(node.text, insert=node.label_coordinates)
                 label['alignment-baseline'] = node.label.alignment
                 label['xml:space'] = 'preserve'
-                # import pdb; pdb.set_trace()
                 label.fill(color=node.label.color)
                 group.add(label)
             svg.add(group)
+        for edge in self.edges.values():
+            path = svg.path(d=edge.d)
+            path.stroke(color=edge.color, width=edge.line_style.width)
+            path.fill(color="rgb(255,255,255)", opacity=0.0)
+            for pos, draw in zip(('start', 'end'), edge.arrow.draw):
+                if draw:
+                    arrow = svg.marker(
+                        id='arrow_{}_{}'.format(edge.id, pos),
+                        refX=0.1, refY=edge.arrow.ref_y,
+                        size=edge.arrow.size,
+                        orient='auto',
+                        markerUnits='strokeWidth'
+                    )
+                    tip = svg.path(d=edge.arrow.d, fill=edge.color)
+                    arrow.add(tip)
+                    svg.defs.add(arrow)
+                    path['marker-{}'.format(pos)] = arrow.get_funciri()
+            svg.add(path)
         svg.save()
+
+    def run(self):
+        self.parse_nodes()
+        self.parse_edges()
+        self.adjust()
+        self.draw_svg()
         # import pdb; pdb.set_trace()
 
 
 if __name__ == '__main__':
     path = "/Users/alexfeldman/CS/Freelance/Graphml_converter/tests/Test_files/test.graphml"
     g = Graph(path)
-    g.parse_nodes()
-    g.parse_edges()
-    g.adjust()
-    g.draw_svg()
+    g.run()

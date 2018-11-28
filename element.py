@@ -126,15 +126,14 @@ class Path(NameMixin):
         self.ty = ty
 
 
-class Arrow(Point):
+class Arrow(Geometry):
 
     arrows = ['standard', 'delta', 'white_delta', 'plain']
 
-    def __init__(self, source, target, x=0.5, y=0.5, d='M0,0 L0,6 L9,3 z'):
-        super(Arrow, self).__init__(x, y)
+    def __init__(self, source, target, x=0.5, y=0.5, width=3.0, height=2.0):
+        super(Arrow, self).__init__(width, height, x, y)
         self.source = source
         self.target = target
-        self.d = d
 
     @property
     def draw(self):
@@ -149,8 +148,16 @@ class Arrow(Point):
         return self.target in self.arrows
 
     @property
-    def size(self):
-        return self.coordinates
+    def d(self):
+        origin_x = 0.0
+        origin_y = 0.0
+        return 'M{0},{1} L{0}, {2} L{3}, {4} Z'.format(
+            origin_x, origin_y, self.height, self.width, self.ref_y
+        )
+
+    @property
+    def ref_y(self):
+        return self.height / 2
 
 
 @functools.total_ordering
