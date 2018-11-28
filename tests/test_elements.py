@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 
 import pytest
 
@@ -92,6 +92,17 @@ def test_arrow_draw_target():
     assert arrow.draw_target
 
 
+@pytest.mark.skip()
+def test_arrow_d():
+    arrow = Arrow(None, None)
+    origin, base, tip, _ = arrow.d.split()
+
+
+def test_ref_y():
+    arrow = Arrow(None, None)
+    assert arrow.ref_y == arrow.height / 2
+
+
 @pytest.mark.skip("fixture 'self' not found")
 def test_node_equality(self):
     x = 4.0
@@ -115,47 +126,45 @@ def test_node_lt(self):
     assert node1 < node2
 
 
-@pytest.mark.skip("coordinates method not set")
 def test_node_coordinates():
-    x = 4.0
-    y = 5.0
-    width = 2.0
-    height = 3.8
-    geometry = Geometry(height, width, x, y)
+    geometry = Geometry(3.8, 2.0, 4.0, 13.21)
     node = Node('id', 'key', 'text', 'rect', None, geometry, None, None)
-    assert node.coordinates[0] == node.geometry.x + (width / 2)
-    assert node.coordinates[1] == node.geometry.y + (height / 2)
-
-    node = Node('id', 'key', 'text', 'circle', None, geometry, None, None)
-
     assert node.coordinates[0] == node.geometry.x
     assert node.coordinates[1] == node.geometry.y
 
 
-@pytest.mark.skip("coordinates method not set")
-def test_edge_coordinates():
-    x = 4.0
-    y = 5.0
-    geometry = Geometry(2, 3, x, y)
-    source_node = Node('id', 'key', 'text', 'rect', None, geometry, None, None)
+@pytest.mark.skip("Not yet")
+def test_node_location_relation():
+    geometry = Geometry(3.8, 2.0, 4.0, 13.21)
+    node = Node('id', 'key', 'text', 'rect', None, geometry, None, None)
+    # test comparison between non-Node
+    with pytest.raises(TypeError):
+        node.location_relation(Point)
+    # test when width == 0, y == 0
+    node.geometry.width = 0.0
+    node.geometry.height = 0.0
+    geometry.translate(2)
+    node2 = Node('id', 'key', 'text', 'rect', None, geometry, None, None)
+    x, y = node.location_relation(node2)
+    assert x == node.geometry.x
+    assert y == node.geometry.y
+    # test node left
 
-    geometry.translate(4)
-    target_node = Node('id', 'key', 'text', 'rect', None, geometry, None, None)
-    edge = Edge('id_', 'key', source_node, target_node, None, None, None)
 
-    assert edge.start_coordinates == source_node.coordinates
-    assert edge.end_coordinates == target_node.coordinates
-
-
-@pytest.mark.skip("coordinates method not set")
+@patch('element.Edge.end_coordinates', new_callable=PropertyMock)
+@patch('element.Edge.start_coordinates', new_callable=PropertyMock)
 def test_edge_d(start_coordinates, end_coordinates):
+    sc_values = (0, 1)
+    ec_values = (10, 5)
+    start_coordinates.return_value = sc_values
+    end_coordinates.return_value = ec_values
     points = [Point(i, i * 3) for i in range(4)]
     path = Path(points)
     edge = Edge('id_', 'key', None, None, None, path, None)
     coordinates = (
-        start_coordinates + edge.path.points[0] + edge.path.points[1]
-        + edge.path.points[2] + edge.path.points[3] + end_coordinates
+        sc_values + edge.path.points[0].coordinates
+        + edge.path.points[1].coordinates + edge.path.points[2].coordinates
+        + edge.path.points[3].coordinates + ec_values
     )
-    assert (
-        edge.d == 'M{}, {} L{}, {} L{}, {} L{}, {} L{}, {} L{}, {}'.format(*coordinates)
-    )
+    d_ = 'M{},{} L{},{} L{},{} L{},{} L{},{} L{},{}'.format(*coordinates)
+    assert edge.d == d_

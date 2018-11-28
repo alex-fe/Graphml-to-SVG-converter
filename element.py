@@ -151,7 +151,7 @@ class Arrow(Geometry):
     def d(self):
         origin_x = 0.0
         origin_y = 0.0
-        return 'M{0},{1} L{0}, {2} L{3}, {4} Z'.format(
+        return 'M{0},{1} L{0},{2} L{3},{4} Z'.format(
             origin_x, origin_y, self.height, self.width, self.ref_y
         )
 
@@ -162,6 +162,8 @@ class Arrow(Geometry):
 
 @functools.total_ordering
 class Node(RGBMixin):
+
+    _padding = 2
 
     def __init__(self, id_, key, text, shape, label, geometry, fill, border):
         self.id = id_
@@ -223,16 +225,16 @@ class Node(RGBMixin):
     def location_relation(self, node):
         if not isinstance(node, Node):
             raise TypeError('Argument must be of type Node.')
-        padding = 2
+
         if self.geometry.width:
             x_bounds_min = self.geometry.x + (self.geometry.width / 3)
             x_bounds_max = self.geometry.x + (self.geometry.width * 2 / 3)
             if node.geometry.x < x_bounds_min:  # Node left of
-                x = self.geometry.x - padding
+                x = self.geometry.x - self._padding
             elif x_bounds_min < node.geometry.x < x_bounds_max:   # Node centered
                 x = self.geometry.x + self.geometry.center[0]
             else:  # Node right of
-                x = self.geometry.x + self.geometry.width + padding
+                x = self.geometry.x + self.geometry.width + self._padding
         else:
             x = self.geometry.x
 
@@ -240,11 +242,11 @@ class Node(RGBMixin):
             y_bounds_min = self.geometry.height / 3
             y_bounds_max = self.geometry.height * 2 / 3
             if node.geometry.y < y_bounds_min:  # Node above
-                y = self.geometry.y + self.height - padding
+                y = self.geometry.y + self.height - self._padding
             elif y_bounds_min < node.geometry.y < y_bounds_max:  # Node centered
                 y = self.geometry.y + self.geometry.center[1]
             else:  # Node below
-                y = self.geometry.y + padding
+                y = self.geometry.y + self._padding
         else:
             y = self.geometry.y
 
@@ -279,8 +281,8 @@ class Edge(object):
 
     @property
     def d(self):
-        data_str = 'M{}, {} '.format(*self.start_coordinates)
+        data_str = 'M{},{} '.format(*self.start_coordinates)
         for point in self.path.points:
-            data_str += 'L{}, {} '.format(*point.coordinates)
-        data_str += 'L{}, {}'.format(*self.end_coordinates)
+            data_str += 'L{},{} '.format(*point.coordinates)
+        data_str += 'L{},{}'.format(*self.end_coordinates)
         return data_str
