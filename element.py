@@ -203,10 +203,14 @@ class Node(RGBMixin):
 
     @property
     def label_coordinates(self):
-
-        x = self.geometry.x + ((self.geometry.width - self.label.width) / 2)
-        y = self.geometry.y + self.geometry.center[1] + self.label.y
-        return x, y
+        return (
+            self.geometry.x
+            + self.label.width
+            + float(getattr(self.label, 'upX', 0)),
+            self.geometry.y
+            + self.label.height
+            + float(getattr(self.label, 'upY', 0))
+        )
 
     @property
     def color(self):
@@ -217,10 +221,8 @@ class Node(RGBMixin):
         return self.geometry.size
 
     def location_relation(self, node):
-
         if not isinstance(node, Node):
             raise TypeError('Argument must be of type Node.')
-
         padding = 2
         if self.geometry.width:
             x_bounds_min = self.geometry.x + (self.geometry.width / 3)
