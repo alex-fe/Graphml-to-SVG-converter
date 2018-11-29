@@ -10,7 +10,7 @@ setup(
     author_email='alexfeldman93@gmail.com',
     packages=['graphml2svg'],
     install_requires=['svgwrite'],
-    version='0.0.3',
+    version='0.0.4',
     license='MIT',
     description='YFile .graphml converter to .svg',
     long_description=long_description,
