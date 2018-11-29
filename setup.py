@@ -1,20 +1,23 @@
 from setuptools import setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
-    # Needed to silence warnings (and to be a worthwhile package)
     name='graphml2svg',
     url='https://github.com/alex-fe/Graphml-to-SVG-converter',
     author='Alex Feldman',
     author_email='alexfeldman93@gmail.com',
-    # Needed to actually package something
-    packages=['converter'],
-    # Needed for dependencies
-    install_requires=['svgwriter'],
-    # *strongly* suggested for sharing
-    version='0.1',
-    # The license can be anything you like
+    packages=['graphml2svg'],
+    install_requires=['svgwrite'],
+    version='0.0.3',
     license='MIT',
     description='YFile .graphml converter to .svg',
-    # We will also need a readme eventually (there will be a warning)
-    # long_description=open('README.md').read(),
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
 )

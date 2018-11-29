@@ -1,2 +1,5 @@
 __pycache__
 tests/Test_files
+dist/
+graphml2svg.egg-info/
+build/
