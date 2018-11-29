@@ -23,9 +23,18 @@ class Graph(NameMixin):
         self.viewbox = None
 
     @staticmethod
-    def get_attrs(element, label, i=0):
+    def get_attrs(element, tag_name, i=0):
+        """Get attributes from tagged elementself. If element not found, or element
+        has no attributes, return empty dictionary.
+        Args:
+            element (xml.element): Element to search within.
+            tag_name (str): Wanted child element's tag name.
+            i (int): index of which element if more than one. Default is 0.
+        Returns:
+            If successfull, return populated dictionary.
+        """
         try:
-            items = element.getElementsByTagName(label)[i].attributes.items()
+            items = element.getElementsByTagName(tag_name)[i].attributes.items()
         except IndexError:
             return {}
         else:
@@ -33,6 +42,12 @@ class Graph(NameMixin):
 
     @staticmethod
     def get_node_text(node):
+        """Get text from node's 'y:NodeLabel' parameter.
+        Args:
+            node (xml.element): Node to search within.
+        Returns:
+            If successfull, return text. Else, return None.
+        """
         try:
             return (
                 node
