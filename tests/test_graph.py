@@ -1,4 +1,3 @@
-import os
 from unittest.mock import patch
 
 import pytest
@@ -7,25 +6,21 @@ from graph import Graph
 from element import Edge, Geometry, Node
 
 
+@pytest.mark.skip()
 class TestGraph:
 
-    def setup(self):
-        path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'Test_files', 'test.graphml'
-        )
-        self.graph = Graph(path)
+    @patch('xml.dom.minidom.parse', return_value=None)
+    def setup(self, parse):
+        self.path = 'test/path/file.graphml'
+        self.graph = Graph(self.path)
         self.node_id = 'Test Node Id'
         self.edge_id = 'Test Edge Id'
 
-    @patch('xml.dom.minidom.parse', return_value=None)
-    def test_output_path(self, parse):
-        path = 'test/path/file.graphml'
-        g = Graph(path)
-        assert g.svg_path == path.replace('.graphml', '.svg')
+    def test_output_path(self):
+        assert self.graph.svg_path == self.path.replace('.graphml', '.svg')
 
         output_path = 'another/path/to/file.svg'
-        g = Graph(path, output_path)
+        g = Graph(self.path, output_path)
         assert g.svg_path == output_path
 
     def test_add_node(self):
@@ -59,6 +54,5 @@ class TestGraph:
         assert not node.getElementsByTagName(attribute)
         assert not self.graph.get_attrs(node, attribute)
 
-    @pytest.mark.skip()
     def test_node_text(self):
         pass
