@@ -1,6 +1,6 @@
 import functools
 
-from .mixins import NameMixin, RGBMixin
+from mixins import NameMixin, RGBMixin
 
 
 class Point(NameMixin):

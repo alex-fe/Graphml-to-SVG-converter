@@ -3,10 +3,10 @@ from xml.dom import minidom
 
 import svgwrite
 
-from .element import (
+from element import (
     Arrow, Edge, Fill, Geometry, Label, Node, Path, Point, Style, Viewbox
 )
-from .mixins import NameMixin
+from mixins import NameMixin
 
 
 class Graph(NameMixin):
@@ -21,6 +21,13 @@ class Graph(NameMixin):
         self.nodes = {}
         self.edges = {}
         self.viewbox = None
+        self._set_graph_attrs()
+
+    def _set_graph_attrs(self):
+        """Populate graph with attributes describing self (id, edgedefault)"""
+        items = self.get_attrs(self.xml, 'graph')
+        for attribute, value in items.items():
+            setattr(self, attribute, value)
 
     @staticmethod
     def get_attrs(element, tag_name, i=0):
@@ -218,3 +225,7 @@ class Graph(NameMixin):
         self.parse_edges()
         self.adjust()
         self.draw_svg()
+
+
+if __name__ == '__main__':
+    Graph('/Users/alexfeldman/CS/Freelance/Graphml_converter/tests/Test_files/test.graphml')
