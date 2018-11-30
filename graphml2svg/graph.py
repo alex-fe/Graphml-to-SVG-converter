@@ -3,10 +3,10 @@ from xml.dom import minidom
 
 import svgwrite
 
-from element import (
+from .element import (
     Arrow, Edge, Fill, Geometry, Label, Node, Path, Point, Style, Viewbox
 )
-from mixins import NameMixin
+from .mixins import NameMixin
 
 
 class Graph(NameMixin):
